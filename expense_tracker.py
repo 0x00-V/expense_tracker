@@ -14,6 +14,7 @@ try:
             print('Error occured -', error)
             exit(1)
 
+
         def addExpense():
             system("clear||cls")
             date = "null"
@@ -34,7 +35,6 @@ try:
                 print("\n\n1. Set Date\n2. Set Category\n3. Set Description\n4. Set Currency\n5. Set Amount\n\n6. Add Expenses\n7. Back\n8. Exit\n\n")
                 user_option = input()
                 system("clear||cls")
-
                 match user_option:
                     case "1":
                         def getDate():
@@ -52,8 +52,7 @@ try:
                                     system("clear||cls")
                                     print("Incorrect Date Format (Enter 0 to go back and set to null)")
                                     if date_entry == "0":
-                                        return "null"
-                                    
+                                        return "null"     
                         date = getDate()
                         system("clear||cls")
                     case "2":
@@ -166,7 +165,6 @@ try:
                 input("Press ENTER to return.")
                 system("clear||cls")
                 return
-             
             groupExpenses = {}
             for row in result:
                 _id, date, category, description, currency, amount = row
@@ -177,16 +175,13 @@ try:
                 print("==============================")
                 print(f"{'Date':<12} {'Category':<18} {'Amount':>10}  {'Description'}")
                 print("-" * 60)
-                
                 total = 0
                 for (_id, date, category, description, currency, amount) in entries:
                     total += amount
                     print(f"{date:<12} {category:<18} {currency}{amount:>8}  {description or '-'}")
-
                 print("-" * 60)
                 print(f"{'Total':<31} {currency}{total:>8.2f}")
                 print()
-
             input("\nPress ENTER to return to the main menu...")
             system("clear||cls")
             return
@@ -199,13 +194,11 @@ try:
             sqliteConnection.commit()
             result = cursor.execute("""SELECT date, SUM(amount) as total, currency_symbol FROM expenses GROUP BY date, currency_symbol ORDER BY date ASC;""").fetchall()
             system("clear||cls")
-
             if not result:
                 print("No expenses recorded.\n")
                 input("Press ENTER to return...")
                 system("clear||cls")
                 return
-
             expenses_by_currency = {}
             for date, total, currency in result:
                 expenses_by_currency.setdefault(currency, []).append((date, total))
@@ -223,15 +216,14 @@ try:
             output_file = f"summary_report-{datetime.datetime.now()}.png"
             plt.savefig(output_file)
             plt.close()
-
             print(f"Summary report saved as '{output_file}'.\n")
             print("You can open it using:")
             print(f"  open {output_file}   # macOS")
             print(f"  xdg-open {output_file}   # Linux")
             print(f"  start {output_file}   # Windows\n")
-
             input("Press ENTER to return to the main menu...")
             system("clear||cls")
+
 
         def editEntries():
             system("clear||cls")
@@ -254,18 +246,17 @@ try:
             cursor.execute("SELECT MAX(id) FROM expenses;")
             top_id = int(cursor.fetchone()[0])
             while True:
+                system("clear||cls")
                 for currency, entries in groupExpenses.items():
                     print(f"\n==============================")
                     print(f"Currency: {currency}")
                     print("==============================")
                     print(f"{'ID':<4} {'Date':<12} {'Category':<18} {'Amount':>10}  {'Description'}")
                     print("-" * 60)
-                    
                     total = 0
                     for (_id, date, category, description, currency, amount) in entries:
                         total += amount
                         print(f"{_id:<} {date:<12} {category:<18} {currency}{amount:>8}  {description or '-'}")
-
                     print("-" * 60)
                     print(f"{'Total':<31} {currency}{total:>8.2f}")
                     print()
@@ -310,6 +301,8 @@ try:
                                 print(f"Edit Date\nCurrently Set: {result[1]}")
                                 print("\n\nEnter a new date (yyyy-mm-dd):\n")
                                 new_date = getDate()
+                                cursor.execute("UPDATE expenses SET date = ? WHERE id = ?", (str(new_date), result[0]))
+                                sqliteConnection.commit()
                                 print(f"{result[0]} has been updated. [{result[1]} -> {new_date}]")
                                 break
                             case "2":
@@ -337,23 +330,56 @@ try:
                                         category = "Other"
                                     case _:
                                         continue
+                                cursor.execute("UPDATE expenses SET category = ? WHERE id = ?", (category, result[0]))
+                                sqliteConnection.commit()
                                 print(f"\n\n{result[0]} has been updated. [{result[2]} -> {category}]")
                                 break  
                             case "3":
                                 system("clear||cls")
-                                
                                 print(f"Set a description for your expense\n\nCurrent Description: {result[3]}\n\nEnter your description: ")
                                 description = input()
                                 if description == "":
                                     description = result[3]
+                                cursor.execute("UPDATE expenses SET description = ? WHERE id = ?", (description, result[0]))
+                                sqliteConnection.commit()
                                 print(f"\n\n{result[0]} has been updated. [{result[3]} -> {description}]")
                                 break
                             case "4":
                                 system("clear||cls")
+                                def getCurrencySymbol():
+                                    print("Set the currency you're using (e.g $, £, ¥)\n\nSymbol: ")
+                                    currency_input = input()
+                                    return currency_input
+                                system("clear||cls")
+                                currency_symbol = getCurrencySymbol()
+                                while len(currency_symbol) > 1:
+                                    system("clear||cls")
+                                    print("Please only enter 1 character.")
+                                    currency_symbol = getCurrencySymbol()
+                                cursor.execute("UPDATE expenses SET currency_symbol = ? WHERE id = ?", (currency_symbol, result[0]))
+                                sqliteConnection.commit()
+                                print(f"\n\n{result[0]} has been updated. [{result[4]} -> {currency_symbol}]")
+                                break
                             case "5":
                                 system("clear||cls")
+                                def getAmount():
+                                    while True:
+                                        print("Set the amount you've spent (number only, no commas)\n\nAmount: ")
+                                        try:
+                                            amount_input = int(input())
+                                            return amount_input
+                                        except ValueError:
+                                            system("clear||cls")
+                                            print("You must enter an integer.")
+                                system("clear||cls")
+                                amount = getAmount()
+                                cursor.execute("UPDATE expenses SET amount = ? WHERE id = ?", (amount, result[0]))
+                                sqliteConnection.commit()
+                                print(f"\n\n{result[0]} has been updated. [{result[5]} -> {amount}]")
+                                break
                             case "6":
                                 system("clear||cls")
+                                return
                             case _:
                                 break
 
@@ -392,8 +418,12 @@ try:
                         print("Invalid Option.\n")
                         continue
 
+
+
         if __name__ == "__main__":
             main()
+
+
 except KeyboardInterrupt:
     system("clear||cls")
     cursor.close()
