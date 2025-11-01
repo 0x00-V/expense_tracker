@@ -14,3 +14,8 @@ Install them with:
 ```bash
 pip install -r requirements.txt
 ```
+
+Usage:
+```bash
+python3 expense_tracker.py
+```
