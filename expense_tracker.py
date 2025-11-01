@@ -3,6 +3,7 @@ from os import system
 import os.path
 import datetime
 import sqlite3
+import matplotlib.pyplot as plt
 
 
 try:
@@ -137,7 +138,7 @@ try:
                             if db_initCheck == []:
                                 cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, currency_symbol TEXT, amount INTEGER NOT NULL); """)
                                 sqliteConnection.commit()
-                            cursor.execute("INSERT INTO expenses (date, category, description, currency_symbol, amount) VALUES (?, ?, ?, ?, ?)", (str(date), category, description, currency_symbol, amount))
+                            cursor.execute("INSERT INTO expenses (date, category, description, currency_symbol, amount) VALUES (?, ?, ?, ?, ?)", (str(date), category, description, currency_symbol, int(amount)))
                             sqliteConnection.commit()
                             return
                     case "7":
@@ -151,7 +152,6 @@ try:
                         exit(0)
                     case _:
                         continue
-
 
 
         def viewExpenses():
@@ -190,8 +190,49 @@ try:
             input("\nPress ENTER to return to the main menu...")
             system("clear||cls")
             return
+
+
         def summaryReport():
-            print("TBI")
+            system("clear||cls")
+            print("Generating summary report...\n")
+            cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, currency_symbol TEXT, amount INTEGER NOT NULL);""")
+            sqliteConnection.commit()
+            result = cursor.execute("""SELECT date, SUM(amount) as total, currency_symbol FROM expenses GROUP BY date, currency_symbol ORDER BY date ASC;""").fetchall()
+            system("clear||cls")
+
+            if not result:
+                print("No expenses recorded.\n")
+                input("Press ENTER to return...")
+                system("clear||cls")
+                return
+
+            expenses_by_currency = {}
+            for date, total, currency in result:
+                expenses_by_currency.setdefault(currency, []).append((date, total))
+            plt.figure(figsize=(10, 6))
+            for currency, entries in expenses_by_currency.items():
+                dates = [datetime.datetime.strptime(d, "%Y-%m-%d") for d, _ in entries]
+                totals = [t for _, t in entries]
+                plt.plot(dates, totals, marker='o', label=f"{currency}")
+            plt.title("Expenses Over Time")
+            plt.xlabel("Date")
+            plt.ylabel("Total Amount")
+            plt.xticks(rotation=45)
+            plt.legend(title="Currency")
+            plt.tight_layout()
+            output_file = f"summary_report-{datetime.datetime.now()}.png"
+            plt.savefig(output_file)
+            plt.close()
+
+            print(f"Summary report saved as '{output_file}'.\n")
+            print("You can open it using:")
+            print(f"  open {output_file}   # macOS")
+            print(f"  xdg-open {output_file}   # Linux")
+            print(f"  start {output_file}   # Windows\n")
+
+            input("Press ENTER to return to the main menu...")
+            system("clear||cls")
+
 
         def main():
             system("clear||cls")
@@ -210,6 +251,7 @@ try:
                         continue
                     case "3":
                         system("clear||cls")
+                        summaryReport()
                         continue
                     case "4":
                         system("clear||cls")
