@@ -6,6 +6,7 @@ import sqlite3
 import matplotlib.pyplot as plt
 
 
+
 try:
         try:
             sqliteConnection = sqlite3.connect('expenses.db')
