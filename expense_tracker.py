@@ -13,24 +13,18 @@ try:
             print('Error occured -', error)
             exit(1)
 
-
-
         def addExpense():
-            #print("TBI")
-            #query = 'SELECT sqlite_version();'
-            #cursor.execute(query)
-            #result = cursor.fetchall()
-            #print('SQLite Version is {}'.format(result[0][0]))
-            #exit(0)
             system("clear||cls")
             date = "null"
             category = "null"
             description = "null"
             currency_symbol = "null"
             amount = "null"
-
+            errmsg = ""
             while True:
                 system("clear||cls")
+                if errmsg != "":
+                    print(errmsg,"\n")
                 print("Expense Tracker - Add Expenses")
                 print(f"\nDate: {date}\nCategory: {category}\nDescription: {description}\nCurrency: {currency_symbol}\nAmount: {amount}")
                 print("\n\n1. Set Date\n2. Set Category\n3. Set Description\n4. Set Currency\n5. Set Amount\n\n6. Add Expenses\n7. Back\n8. Exit\n\n")
@@ -39,17 +33,23 @@ try:
 
                 match user_option:
                     case "1":
-                        def getDate(): 
+                        def getDate():
+                            nonlocal errmsg
                             while True:
                                 try:
                                     print("Expense Tracker - Add Expenses - Set Date")
                                     date_entry = input("Enter a date in YYYY-MM-DD format: ")
                                     year, month, day = map(int, date_entry.split('-'))
                                     date_input = datetime.date(year, month, day)
+                                    if "date" in errmsg:
+                                        errmsg = errmsg.replace("date,", "")
                                     return date_input
-                                except:
+                                except ValueError:
                                     system("clear||cls")
-                                    print("Incorrect Date Format") 
+                                    print("Incorrect Date Format (Enter 0 to go back)")
+                                    if date_entry == "0":
+                                        return "null"
+                                    
                         date = getDate()
                         system("clear||cls")
                     case "2":
@@ -109,10 +109,24 @@ try:
                         amount = getAmount()
                     case "6":
                         system("clear||cls")
-                        print("To Be Implemented")
+                        if(date == "null" or category == "null" or currency_symbol == "null" or amount == "null"):
+                            errmsg += "date, " if date == "null" else ""
+                            errmsg += "category, " if category == "null" else ""
+                            errmsg += "currency symbol, " if currency_symbol == "null" else ""
+                            errmsg += "amount, " if amount == "null" else ""
+                            errmsg = errmsg.rstrip(", ") + " must not be null."
+                            continue
+                        else:
+                            db_initCheck = cursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'; """).fetchall()
+                            if db_initCheck == []:
+                                cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, currency_symbol TEXT, amount INTEGER NOT NULL); """)
+                                sqliteConnection.commit()
+                            cursor.execute("INSERT INTO expenses (date, category, description, currency_symbol, amount) VALUES (?, ?, ?, ?, ?)", (str(date), category, description, currency_symbol, amount))
+                            sqliteConnection.commit()
+                            return
                     case "7":
                         system("clear||cls")
-                        main()
+                        return
                     case "8":
                         system("clear||cls")
                         print("\nGoodbye.\n")
