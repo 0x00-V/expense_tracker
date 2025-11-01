@@ -24,7 +24,10 @@ try:
             while True:
                 system("clear||cls")
                 if errmsg != "":
-                    print(errmsg,"\n")
+                    if ("date" not in errmsg and "category" not in errmsg and "currency symbol" not in errmsg and "amount" not in errmsg):
+                        ""
+                    else:
+                        print(errmsg,"\n")
                 print("Expense Tracker - Add Expenses")
                 print(f"\nDate: {date}\nCategory: {category}\nDescription: {description}\nCurrency: {currency_symbol}\nAmount: {amount}")
                 print("\n\n1. Set Date\n2. Set Category\n3. Set Description\n4. Set Currency\n5. Set Amount\n\n6. Add Expenses\n7. Back\n8. Exit\n\n")
@@ -42,11 +45,11 @@ try:
                                     year, month, day = map(int, date_entry.split('-'))
                                     date_input = datetime.date(year, month, day)
                                     if "date" in errmsg:
-                                        errmsg = errmsg.replace("date,", "")
+                                        errmsg = errmsg.replace("|date|", "")
                                     return date_input
                                 except ValueError:
                                     system("clear||cls")
-                                    print("Incorrect Date Format (Enter 0 to go back)")
+                                    print("Incorrect Date Format (Enter 0 to go back and set to null)")
                                     if date_entry == "0":
                                         return "null"
                                     
@@ -60,20 +63,28 @@ try:
                         match category_selection:
                             case "1":
                                 category = "Food & Groceries"
+                                errmsg = errmsg.replace("|category|", "")
                             case "2":
                                 category = "Transport"
+                                errmsg = errmsg.replace("|category|", "")
                             case "3":
                                 category = "Entertainment"
+                                errmsg = errmsg.replace("|category|", "")
                             case "4":
                                 category = 'Utilities'
+                                errmsg = errmsg.replace("|category|", "")
                             case "5":
                                 category = "Shopping"
+                                errmsg = errmsg.replace("|category|", "")
                             case "6":
                                 category = "Health"
+                                errmsg = errmsg.replace("|category|", "")
                             case "7":
                                 category = "Subscriptions"
+                                errmsg = errmsg.replace("|category|", "")
                             case "8":
                                 category = "Other"
+                                errmsg = errmsg.replace("|category|", "")
                             case _:
                                 category = "null"
                     case "3":
@@ -84,9 +95,11 @@ try:
                         system("clear||cls")
                     case "4":
                             def getCurrencySymbol():
+                                nonlocal errmsg
                                 print("Expense Tracker - Add Expenses - Set Currency")
                                 print("Set the currency you're using (e.g $, £, ¥)\n\nSymbol: ")
                                 currency_input = input()
+                                errmsg = errmsg.replace("|currency symbol|", "")
                                 return currency_input
                             system("clear||cls")
                             currency_symbol = getCurrencySymbol()
@@ -96,11 +109,13 @@ try:
                                 currency_symbol = getCurrencySymbol()
                     case "5":
                         def getAmount():
+                            nonlocal errmsg
                             while True:
                                 print("Expense Tracker - Add Expenses - Set Amount")
                                 print("Set the amount you've spent (number only, no commas)\n\nAmount: ")
                                 try:
                                     amount_input = int(input())
+                                    errmsg = errmsg.replace("|amount|", "")
                                     return amount_input
                                 except ValueError:
                                     system("clear||cls")
@@ -110,11 +125,12 @@ try:
                     case "6":
                         system("clear||cls")
                         if(date == "null" or category == "null" or currency_symbol == "null" or amount == "null"):
-                            errmsg += "date, " if date == "null" else ""
-                            errmsg += "category, " if category == "null" else ""
-                            errmsg += "currency symbol, " if currency_symbol == "null" else ""
-                            errmsg += "amount, " if amount == "null" else ""
-                            errmsg = errmsg.rstrip(", ") + " must not be null."
+                            errmsg = ""
+                            errmsg += "|date| " if date == "null" else ""
+                            errmsg += "|category| " if category == "null" else ""
+                            errmsg += "|currency symbol| " if currency_symbol == "null" else ""
+                            errmsg += "|amount| " if amount == "null" else ""
+                            errmsg += " must not be null."
                             continue
                         else:
                             db_initCheck = cursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'; """).fetchall()
