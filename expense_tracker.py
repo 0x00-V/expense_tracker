@@ -6,7 +6,6 @@ import sqlite3
 import matplotlib.pyplot as plt
 
 
-
 try:
         try:
             sqliteConnection = sqlite3.connect('expenses.db')
@@ -234,12 +233,136 @@ try:
             input("Press ENTER to return to the main menu...")
             system("clear||cls")
 
+        def editEntries():
+            system("clear||cls")
+            db_initCheck = cursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'; """).fetchall()
+            if db_initCheck == []:
+                cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, currency_symbol TEXT, amount INTEGER NOT NULL); """)
+                sqliteConnection.commit()
+            result = cursor.execute("SELECT * FROM expenses ORDER BY date ASC, currency_symbol ASC;").fetchall()
+            system("clear||cls")
+            if not result:
+                print("No expenses recorded.\n")
+                input("Press ENTER to return.")
+                system("clear||cls")
+                return
+            groupExpenses = {}
+            for row in result:
+                _id, date, category, description, currency, amount = row
+                groupExpenses.setdefault(currency, []).append(row)
+
+            cursor.execute("SELECT MAX(id) FROM expenses;")
+            top_id = int(cursor.fetchone()[0])
+            while True:
+                for currency, entries in groupExpenses.items():
+                    print(f"\n==============================")
+                    print(f"Currency: {currency}")
+                    print("==============================")
+                    print(f"{'ID':<4} {'Date':<12} {'Category':<18} {'Amount':>10}  {'Description'}")
+                    print("-" * 60)
+                    
+                    total = 0
+                    for (_id, date, category, description, currency, amount) in entries:
+                        total += amount
+                        print(f"{_id:<} {date:<12} {category:<18} {currency}{amount:>8}  {description or '-'}")
+
+                    print("-" * 60)
+                    print(f"{'Total':<31} {currency}{total:>8.2f}")
+                    print()
+                print("\n\nWhich entry would you like to edit? (id)\n\n")
+                try:
+                    entry_input = int(input())
+                except ValueError:
+                    print(f"Please enter a valid integer")
+                    continue
+                if entry_input < 0 or entry_input > top_id:
+                    print(f"Please enter an integer between 0 and {top_id}")
+                    continue
+                else:
+                    cursor.execute("SELECT * FROM expenses WHERE id = ?", (entry_input,))
+                    result = cursor.fetchone()
+                    if result is None:
+                        system("clear||cls")
+                        print(f"{entry_input} does not exist.")
+                        continue
+                    else:
+                        system("clear||cls")
+                        print(f"You have selected entry {result[0]}")
+                        print(f"1. Date: {result[1]}\n2. Category: {result[2]}\n3. Description: {result[3]}\n4. Currency: {result[4]}\n5. Amount: {result[5]}")
+                        print(f"\n\nWhat would you like to edit? (6 to exit)\n\n")
+                        edit_input = input()
+                        match edit_input:
+                            case "1":
+                                def getDate():
+                                    while True:
+                                        try:
+                                            date_entry = input("Enter a date in YYYY-MM-DD format: ")
+                                            year, month, day = map(int, date_entry.split('-'))
+                                            date_input = datetime.date(year, month, day)
+                                            return date_input
+                                        except ValueError:
+                                            system("clear||cls")
+                                            print("Incorrect Date Format (Enter 0 to go back)")
+                                            print(f"Edit Date\nCurrently Set: {result[1]}")
+                                            if date_entry == "0":
+                                                return result[1]
+                                system("clear||cls")
+                                print(f"Edit Date\nCurrently Set: {result[1]}")
+                                print("\n\nEnter a new date (yyyy-mm-dd):\n")
+                                new_date = getDate()
+                                print(f"{result[0]} has been updated. [{result[1]} -> {new_date}]")
+                                break
+                            case "2":
+                                system("clear||cls")
+                                print(f"Edit Category\nCurrently Set: {result[2]}")
+                                print("Select a Category\n\n1. Food & Groceries\n2. Transport\n3. Entertainment\n4. Utilities\n5. Shopping\n6. Health\n7. Subscriptions\n8. Other\n\n")
+                                category_selection = input()
+                                category = result[2]
+                                match category_selection:
+                                    case "1":
+                                        category = "Food & Groceries"
+                                    case "2":
+                                        category = "Transport"
+                                    case "3":
+                                        category = "Entertainment"
+                                    case "4":
+                                        category = 'Utilities'
+                                    case "5":
+                                        category = "Shopping"
+                                    case "6":
+                                        category = "Health"
+                                    case "7":
+                                        category = "Subscriptions"
+                                    case "8":
+                                        category = "Other"
+                                    case _:
+                                        continue
+                                print(f"\n\n{result[0]} has been updated. [{result[2]} -> {category}]")
+                                break  
+                            case "3":
+                                system("clear||cls")
+                                
+                                print(f"Set a description for your expense\n\nCurrent Description: {result[3]}\n\nEnter your description: ")
+                                description = input()
+                                if description == "":
+                                    description = result[3]
+                                print(f"\n\n{result[0]} has been updated. [{result[3]} -> {description}]")
+                                break
+                            case "4":
+                                system("clear||cls")
+                            case "5":
+                                system("clear||cls")
+                            case "6":
+                                system("clear||cls")
+                            case _:
+                                break
+
 
         def main():
             system("clear||cls")
             while True:
                 print("Expense Tracker By 0x0-V (Daniel Thomas)")
-                print("\n\n1. Add Expense\n2. View expenses\n3. Summary Report\n4. Exit\n\n")
+                print("\n\n1. Add Expense\n2. View expenses\n3. Summary Report\n4. Edit entries\n5. Exit\n\n")
                 user_option = input()
                 match user_option:
                     case "1":
@@ -255,6 +378,10 @@ try:
                         summaryReport()
                         continue
                     case "4":
+                        system("clear||cls")
+                        editEntries()
+                        continue
+                    case "5":
                         system("clear||cls")
                         cursor.close()
                         sqliteConnection.close()
