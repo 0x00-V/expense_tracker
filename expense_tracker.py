@@ -146,6 +146,8 @@ try:
                     case "8":
                         system("clear||cls")
                         print("\nGoodbye.\n")
+                        cursor.close()
+                        sqliteConnection.close()
                         exit(0)
                     case _:
                         continue
@@ -153,7 +155,41 @@ try:
 
 
         def viewExpenses():
-            print("TBI")
+            db_initCheck = cursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'; """).fetchall()
+            if db_initCheck == []:
+                cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, currency_symbol TEXT, amount INTEGER NOT NULL); """)
+                sqliteConnection.commit()
+            result = cursor.execute("SELECT * FROM expenses ORDER BY date ASC, currency_symbol ASC;").fetchall()
+            system("clear||cls")
+            if not result:
+                print("No expenses recorded.\n")
+                input("Press ENTER to return.")
+                system("clear||cls")
+                return
+             
+            groupExpenses = {}
+            for row in result:
+                _id, date, category, description, currency, amount = row
+                groupExpenses.setdefault(currency, []).append(row)
+            for currency, entries in groupExpenses.items():
+                print(f"\n==============================")
+                print(f"Currency: {currency}")
+                print("==============================")
+                print(f"{'Date':<12} {'Category':<18} {'Amount':>10}  {'Description'}")
+                print("-" * 60)
+                
+                total = 0
+                for (_id, date, category, description, currency, amount) in entries:
+                    total += amount
+                    print(f"{date:<12} {category:<18} {currency}{amount:>8}  {description or '-'}")
+
+                print("-" * 60)
+                print(f"{'Total':<31} {currency}{total:>8.2f}")
+                print()
+
+            input("\nPress ENTER to return to the main menu...")
+            system("clear||cls")
+            return
         def summaryReport():
             print("TBI")
 
@@ -170,11 +206,10 @@ try:
                         continue
                     case "2":
                         system("clear||cls")
-                        addExpense()
+                        viewExpenses()
                         continue
                     case "3":
                         system("clear||cls")
-                        addExpense()
                         continue
                     case "4":
                         system("clear||cls")
@@ -191,5 +226,7 @@ try:
             main()
 except KeyboardInterrupt:
     system("clear||cls")
+    cursor.close()
+    sqliteConnection.close()
     print("\nGoodbye.\n")
 
