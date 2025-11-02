@@ -213,7 +213,8 @@ try:
             plt.xticks(rotation=45)
             plt.legend(title="Currency")
             plt.tight_layout()
-            output_file = f"summary_report-{datetime.datetime.now()}.png"
+            currtime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            output_file = f"summary_report_{currtime}.png"
             plt.savefig(output_file)
             plt.close()
             print(f"Summary report saved as '{output_file}'.\n")
